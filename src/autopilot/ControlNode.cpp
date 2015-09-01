@@ -80,6 +80,7 @@ ControlNode::ControlNode()
 	takeoff_pub	   = nh_.advertise<std_msgs::Empty>(takeoff_channel,1);
 	land_pub	   = nh_.advertise<std_msgs::Empty>(land_channel,1);
 	toggleState_pub	   = nh_.advertise<std_msgs::Empty>(toggleState_channel,1);
+	command_feedback_pub = nh_.advertise<std_msgs::Empty>("cmd_fdbk",1);
 
 	// services handler
 	setReference_ = nh_.advertiseService("drone_autopilot/setReference", &ControlNode::setReference, this);
@@ -122,7 +123,10 @@ void ControlNode::droneposeCb(const tum_ardrone::filter_stateConstPtr statePtr)
 	// as long as no KI present:
 	// pop next KI (if next KI present).
 	while(currentKI == NULL && commandQueue.size() > 0)
-		popNextCommand(statePtr);
+        {
+	  popNextCommand(statePtr);
+	  cmd_complete_flag = false;
+        }
 
 	// if there is no current KI now, we obviously have no current goal -> send drone hover
 	if(currentKI != NULL)
@@ -483,9 +487,17 @@ void ControlNode::stopControl() {
 }
 
 void ControlNode::updateControl(const tum_ardrone::filter_stateConstPtr statePtr) {
-	if (currentKI->update(statePtr) && commandQueue.size() > 0) {
+	if (currentKI->update(statePtr) ) {
+	  if(cmd_complete_flag == false && commandQueue.size() == 0)
+	  {
+	    command_feedback_pub.publish(std_msgs::Empty());
+	    cmd_complete_flag = true;
+	  }
+	  if(commandQueue.size() > 0)
+	  {
 		delete currentKI;
 		currentKI = NULL;
+	  }
 	}
 }
 

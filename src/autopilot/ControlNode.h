@@ -54,6 +54,7 @@ private:
 	ros::Publisher takeoff_pub;
 	ros::Publisher land_pub;
 	ros::Publisher toggleState_pub;
+	ros::Publisher command_feedback_pub;
 
 	ros::NodeHandle nh_;
 	static pthread_mutex_t tum_ardrone_CS;
@@ -105,6 +106,9 @@ private:
 	double parameter_MaxControl;
 	double parameter_InitialReachDist;
 	double parameter_StayWithinDist;
+
+	/////prgp
+	bool cmd_complete_flag = true;
 
 	// functions
 	void startControl();
